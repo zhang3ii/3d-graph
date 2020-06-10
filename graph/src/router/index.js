@@ -2,7 +2,7 @@ import Vue from 'vue'
 import Router from 'vue-router'
 import test from '@/components/test'
 import index from '@/components/index'
-import paper from '@/components/paper'
+import graph from '@/components/graph'
 
 Vue.use(Router)
 
@@ -14,16 +14,14 @@ export default new Router({
       component: test
     },
     {
-      path: '/index',
-      name: 'index',
-      component: index
+      path: '/graph',
+      name: 'test',
+      component: graph
     },
     {
-      path: '/paper',
+      path: '/index',
       name: 'paper',
-      component: paper
-    }
-
-
+      component: index
+    },
   ]
 })

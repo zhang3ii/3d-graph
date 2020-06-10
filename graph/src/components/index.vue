@@ -1,4 +1,3 @@
-    
 <template>
   <div id="app">
     <div id="3d-graph"></div>
@@ -11,14 +10,11 @@ import ForceGraph3D from '3d-force-graph';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 import * as THREE from 'three'
 import data from '../data/save.json'
-
  import SpriteText from 'three-spritetext'
 let hoverNode = null;
 const highlightNodes = new Set();
 const highlightLinks = new Set();
 var Graph = ForceGraph3D();
-
-
 export default {
   name: "Home",
   computed: {
@@ -34,10 +30,10 @@ export default {
     }
   },
   mounted() {
-    // this.draw()
+    this.draw()
   },
   created(){
-    this.getData()
+    // this.getData()
   },
   methods: {
       updateHighlight() {
@@ -86,9 +82,9 @@ export default {
       alertMessage() {
         this.$message('点击展开关系');
       },
-      draw(res) {
+      draw() {
         Graph(document.getElementById('3d-graph')) //.graphData('../assets/dataset.json')
-        .graphData(res)
+        .graphData(data)
         .linkDirectionalParticleSpeed(d => 5)
         .nodeColor(node => highlightNodes.has(node) ? node === hoverNode ? 'rgb(255,0,0,1)' : 'rgba(255,160,0,0.8)' : 'rgba(0,255,255,0.6)')
         .linkWidth(link => highlightLinks.has(link) ? 4 : 1)
@@ -115,7 +111,6 @@ export default {
           }
           this.updateHighlight();
         })
-
         .nodeThreeObject(node => {
             const sprite = new SpriteText(node.id);
             sprite.color = '#fff';
@@ -164,7 +159,6 @@ export default {
                 this.open()
               }
           })
-
           var helper = new THREE.GridHelper(2000, 10)
           helper.position.y = -500
           helper.material.opacity = 0.7

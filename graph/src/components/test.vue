@@ -1,164 +1,137 @@
 <template>
   <div>
-      <div id="largerGraph"></div>
+    <div id="container"></div>
   </div>
 </template>
-
-
+ 
 <script>
-  /* eslint-disable */
-  import ForceGraph3D from '3d-force-graph';
-  import * as THREE from 'three'
-  import SpriteText from 'three-spritetext'
-  import axios from 'axios'
+import * as THREE from "three";
+import {OBJLoader2} from '../../node_modules/three/examples/jsm/loaders/OBJLoader2';
+import { OrbitControls } from "../../node_modules/three/examples/jsm/controls/OrbitControls";
 
-  // let hoveNode = null;
-  // const highlightNodes = new Set();
-  // const highlightLinks = new Set();
-  // var Graph = ForceGraph3D()
+export default {
+  name: "ThreeTest",
+  data() {
+    return {
+      camera: null,
+      scene: null,
+      renderer: null,
+      mesh: null
+    };
+  },
+  methods: {
+    scene_init() {
+      const canvas = document.getElementById('container');
+      this.renderer = new THREE.WebGLRenderer({antialias: true});
 
+      const fov = 45;
+      const aspect = 2; // the canvas default
+      const near = 0.1;
+      const far = 100;
+      this.camera = new THREE.PerspectiveCamera(70, container.clientWidth/container.clientHeight, 0.01, 10);
+      this.camera.position.set(0, 12, 15);
+      this.camera.lookAt(0, 0, 0);
 
-  export default {
-    data(){
-      return{
-        result: {},
-        msg: '',
-        nodeResult: [],
-        linkResult: [],
-        relationship: {},
-        linkRelation: {}
-        
-      }
+      const controls = new OrbitControls(this.camera, canvas);
+      controls.target.set(0, 0, 0);
+      controls.update();
+
+      this.scene = new THREE.Scene();
+      this.scene.background = new THREE.Color("black");
     },
-    methods:{
-      getData() {
-        axios({
-          method: 'get',
-          url: 'http://192.168.1.100:5000/person'
-        }).then(res =>{
-          this.result = res.data.person_relationship
-          this.draw(res.data.person_relationship)
-        })
-      },
-      getDataFromP2P(p1, p2){
-        axios({
-          method: 'get',
-          url: 'http://192.168.1.100:5000/p2p?p1='+p1.trim()+'&'+'p2='+p2.trim(),
-        }).then(res =>{
-          let nodes = res.data.p2p.nodes
-          let links = res.data.p2p.links
-          if (nodes) {
-            for (let index in nodes) {
-              if (!this.relationship[nodes[index].id]) {
-                this.relationship[nodes[index].id] = nodes[index].property
-                this.nodeResult.push(nodes[index])
-              }
-            }
-          }
-          for (let index in links) {
-              this.linkResult.push(links[index])
-          }
-        })
-      },
-      open() {
-        this.$notify.info({
-          title: '详细信息',
-          message: this.msg,
-          duration: 6000
-        })
-      },
-      alertMessage() {
-        this.$message('点击展开关系');
-      },
-      draw(res) {
-        const elem = document.getElementById('largerGraph');
-        const Graph = ForceGraph3D()(elem)
-          .graphData(res)
-          .nodeAutoColorBy('group')
-          .linkThreeObjectExtend(true)
-          .linkWidth(2)
-          .nodeLabel('id')
-          .linkDirectionalParticles(3)
-          .linkDirectionalParticleSpeed(d => 5 * 0.001)
-          .nodeThreeObject(node => {
-            const obj = new THREE.Mesh(
-              new THREE.SphereBufferGeometry(10),
-              new THREE.MeshBasicMaterial({ depthWrite: false, transparent: true, opacity: 0 })
-            );
-            // add text sprite as child
-            const sprite = new SpriteText(node.id);
-            sprite.color = node.color;
-            sprite.textHeight = 3;
-            obj.add(sprite);
-            return obj;
-          })
-          .onNodeDragEnd(node => {
-            node.fx =  node.x;
-            node.fy = node.y;
-            node.fz = node.z;
-          })
-          .onLinkClick(link => {
-            this.alertMessage()
-            let source = link.source.id
-            let target = link.target.id
-            let catche = this.getDataFromP2P(source, target)
-            for (let index in this.nodeResult) {
-              const {nodes, links} = Graph.graphData();
-              let id = this.nodeResult[index].id
-              Graph.graphData({
-                nodes: [...nodes, { id }],
-                links: [...links]
-              })  
-          }
-          for (let index in this.linkResult) {
-            const {nodes, links} = Graph.graphData();
-              let source = this.linkResult[index].source
-              let target = this.linkResult[index].target
-              Graph.graphData({
-                nodes: [...nodes],
-                links: [...links, { source: source, target: target}]
-              })  
-          }
-          }
-          )
-          .onNodeClick(node => {
-              let reg = /\\/g
-              let datas = this.relationship[node.id]
-              if (datas) {
-                let message = ''
-                for (let index in datas) {
-                  message  = message + index + ':' + datas[index] + ' \n'
-                }
-                this.msg = message
-                this.open()
-              }
-          })
-          // .onLinkHover(link => {
-          //   if (link) {
-
-          //   }
-          // })
-        },
-
+    // 底面初始化
+    plane_init() {
+      const planeSize = 15;
+      const loader = new THREE.TextureLoader();
+      const texture = loader.load("../resources/checker.png");
+      texture.wrapS = THREE.RepeatWrapping;
+      texture.wrapT = THREE.RepeatWrapping;
+      texture.magFilter = THREE.NearestFilter;
+      const repeats = planeSize / 2;  
+      texture.repeat.set(repeats, repeats);
+      const planeGeo = new THREE.PlaneBufferGeometry(planeSize, planeSize);
+      const planeMat = new THREE.MeshPhongMaterial({
+        map: texture,
+        side: THREE.DoubleSide
+      });
+      this.mesh = new THREE.Mesh(planeGeo, planeMat);
+      this.mesh.rotation.x = Math.PI * -0.5;
+      this.scene.add(this.mesh);
     },
-    mounted() {
+
+    // 灯光初始化
+    light_init() {
+        // 环境灯光
+        {
+            const skyColor = 0xB1E1FF;  // light blue
+            const groundColor = 0xB97A20;  // brownish orange
+            const intensity = 1;
+            const light = new THREE.HemisphereLight(skyColor, groundColor, intensity);
+            this.scene.add(light);
+        }
+        // 灯光
+        {
+            const color = 0xABABAB;
+            const intensity = 1;
+            const light = new THREE.DirectionalLight(color, intensity);
+            light.position.set(0, 10, 5);
+            light.target.position.set(-5, 0, 0);
+            this.scene.add(light);
+            this.scene.add(light.target);
+        }
     },
-    created(){
-      this.getData()
+
+  // 房屋模型初始化
+    house_init() {
+      const objLoader = new OBJLoader2();
+      objLoader.load('../resources/3d_house.obj', (root) => {
+          this.house = root;
+          // house.position.set(0,0,8);
+          this.scene.add(root);
+      });
+  },
+
+  mouse_init() {
+    this.raycaster = new THREE.Raycaster();
+    this.mouse = new THREE.Vector2();
+    document.addEventListener('click', function (event) {
+        event.preventDefault();
+        this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+        this.mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+        this.raycaster.setFromCamera(mouse, camera);
+        let objs = [];
+        for (let name in objects.obj_map) {
+            let item = objects.obj_map[name];
+            objs.push(item);
+        }
+        let intersects = this.raycaster.intersectObjects(objs);
+        // console.log(intersects);
+        if (intersects.length !== 0) {
+            cube.onclick_callback(intersects[0].object);
+        }
+    }, false);
+},
+
+    animate() {
+      requestAnimationFrame(this.animate);
+      this.mesh.rotation.x += 0.01;
+      this.mesh.rotation.y += 0.02;
+      this.renderer.render(this.scene, this.camera);
     }
+  },
+  mounted() {
+    // this.init();
+    this.scene_init();
+    this.plane_init();
+    this.light_init();
+    this.house_init();
+    this.animate();
   }
+};
 </script>
-
-<style scoped lang="css">
-  #largerGraph {
-    position: fixed;
-  }
-  #left_room {
-    background-color: cornsilk;
-    z-index: 999;
-    top: 0px;
-    right: 0px;
-    width: 200px;
-    position: absolute;
-  }
+<style scoped>
+#container {
+  height: 400px;
+}
 </style>
