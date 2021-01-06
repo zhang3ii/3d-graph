@@ -11,7 +11,7 @@
   },
   "dependencies": {
     "3d-force-graph": "^1.62.1",
-    "axios": "^0.19.2",
+    "axios": "^0.21.1",
     "d3": "^5.16.0",
     "element-ui": "^2.13.1",
     "force-graph": "^1.29.1",
